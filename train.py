@@ -33,9 +33,7 @@ class MyTransformer(TransformerChatGlmLMHeadModel, with_pl=True):
 class MySimpleModelCheckpoint(SimpleModelCheckpoint):
     def __init__(self, *args, **kwargs):
         super(MySimpleModelCheckpoint, self).__init__(*args, **kwargs)
-        # lora_args: LoraArguments = self.external_kwargs['lora_args']
-        lora_args: LoraArguments = None
-
+        lora_args: LoraArguments = self.external_kwargs['lora_args']
         if lora_args.with_lora:
             self.weight_file = './best_ckpt'
             self.last_weight_file = './last_ckpt'
@@ -56,9 +54,7 @@ class MySimpleModelCheckpoint(SimpleModelCheckpoint):
             self, trainer: "pl.Trainer", pl_module: "pl.LightningModule"
     ) -> None:
 
-        # lora_args: LoraArguments = self.external_kwargs['lora_args']
-        lora_args: LoraArguments = None
-
+        lora_args: LoraArguments = self.external_kwargs['lora_args']
         # 保存权重
         if not lora_args.with_lora:
             super(MySimpleModelCheckpoint, self).on_save_model(trainer, pl_module)
@@ -94,6 +90,33 @@ class MySimpleModelCheckpoint(SimpleModelCheckpoint):
             input_text = preprocess(input_text)
             output = MySimpleModelCheckpoint.generate_text(pl_module, input_text, tokenizer,
                                                            data_args.max_target_length, device=device)
+
+            print('input', text)
+            print('output', output)
+            print()
+
+
+class EvalModelCheckpoint(SimpleModelCheckpoint):
+    def on_save_model(
+            self, trainer: "pl.Trainer", pl_module: "pl.LightningModule"
+    ) -> None:
+        prefixs = [
+            "我想听一首开心的歌曲",
+            "周五下班了但工作没做完，不太开心",
+            "我想听听一首风格的西方通俗歌曲，希望它是国语，我希望它是原唱。"
+            "我想听听一首风格的西方通俗歌曲，希望它是中国话，它应该是一首演绎水平的歌曲，我希望听到爱情的感觉，我希望它是抖音。"
+            "上山打老虎的人应该听什么歌？"
+            "谈恋爱了，我应该听什么歌？"
+        ]
+
+        print('*' * 30, 'generate_text...')
+        for text in prefixs:
+            input_text = '问：{}\n答：'.format(text)
+            input_text = preprocess(input_text)
+            output = MySimpleModelCheckpoint.generate_text(pl_module, input_text, tokenizer,
+                                                           data_args.max_target_length,
+                                                           # device=device
+                                                           )
 
             print('input', text)
             print('output', output)
@@ -143,12 +166,13 @@ if __name__ == '__main__':
         #                                       every_n_train_steps=50,
         #                                       # every_n_epochs=1
         #                                       )
-        checkpoint_callback = MySimpleModelCheckpoint(monitor="loss",
-                                                      every_n_epochs=1,
-                                                      every_n_train_steps=100 // training_args.gradient_accumulation_steps,
-                                                      # 模型参数
-                                                      model_args=model_args,
-                                                      training_args=training_args)
+        checkpoint_callback = EvalModelCheckpoint('./best_ckpt', monitor='loss',
+                                                  save_weights_only=False,
+                                                  save_last=True,
+                                                  save_top_k=1,
+                                                  every_n_train_steps=50,
+                                                  every_n_epochs=1
+                                                  )
 
     strategy = 'ddp' if torch.cuda.device_count() > 1 else None
     if deepspeed_config is not None and len(deepspeed_config):
