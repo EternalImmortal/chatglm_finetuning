@@ -25,60 +25,36 @@ class MyTransformer(TransformerChatGlmLMHeadModel, with_pl=True):
         self.lora_args = lora_args
         if lora_args.with_lora:
             model = LoraModel(self.backbone, lora_args)
-            print('*' * 30,'lora info')
+            print('*' * 30, 'lora info')
             model.print_trainable_parameters()
             self.set_model(model, copy_attr=False)
-
-
 
 
 class MySimpleModelCheckpoint(SimpleModelCheckpoint):
     def __init__(self, *args, **kwargs):
         super(MySimpleModelCheckpoint, self).__init__(*args, **kwargs)
-
-        self.output_dir = './best_ckpt'
-        if not os.path.exists(self.output_dir):
-            os.mkdir(self.output_dir)
-        self.weight_file = os.path.join(self.output_dir ,'best.pt')
+        lora_args: LoraArguments = self.external_kwargs['lora_args']
+        if lora_args.with_lora:
+            self.weight_file = './best_ckpt'
+            self.last_weight_file = './last_ckpt'
 
     def load_model_from_ckpt(self):
         model_args = self.external_kwargs['model_args']
         training_args = self.external_kwargs['training_args']
         lora_args = LoraArguments.from_pretrained(self.last_weight_file)
         pl_module = MyTransformer(lora_args=lora_args,
-                              config=config,
-                              model_args=model_args,
-                              training_args=training_args)
+                                  config=config,
+                                  model_args=model_args,
+                                  training_args=training_args)
 
-
-        batch = {}
-        for i in range(max_target_length):
-            batch.clear()
-            batch['input_ids'] = [input_ids + gen_ids + tail_ids]
-            for k in batch:
-                batch[k] = torch.tensor(batch[k], dtype=torch.int32, device=device)
-
-            out = pl_module.test_step(batch, 0)
-            logits = out['outputs'][0]
-            logits = np.argmax(logits[:, -1], axis=-1)
-            logits = logits[0].tolist()
-            gen_ids.append(logits)
-            token = tokenizer.decode([logits])
-            gen_tokens.append(token)
-
-        out_text = ''.join(gen_tokens)
-        out_text = postprocess(out_text)
-        return out_text
-
-        pl_module.backbone.from_pretrained(pl_module.backbone.model,self.last_weight_file)
+        pl_module.backbone.from_pretrained(pl_module.backbone.model, self.last_weight_file)
         return pl_module
-
 
     def on_save_model(
             self, trainer: "pl.Trainer", pl_module: "pl.LightningModule"
     ) -> None:
 
-        lora_args : LoraArguments =  self.external_kwargs['lora_args']
+        lora_args: LoraArguments = self.external_kwargs['lora_args']
         # 保存权重
         if not lora_args.with_lora:
             super(MySimpleModelCheckpoint, self).on_save_model(trainer, pl_module)
@@ -87,14 +63,14 @@ class MySimpleModelCheckpoint(SimpleModelCheckpoint):
             monitor_candidates.update(self.on_get_metric(trainer, pl_module))
             val = monitor_candidates.get(self.monitor, None)
 
-            #保存loss最小权重
+            # 保存loss最小权重
             if self.update_best(val):
                 logging.info('epoch {} ,step {} , save best {}, {}\n'.format(monitor_candidates['epoch'],
                                                                              monitor_candidates['step'],
                                                                              self.best[self.monitor],
                                                                              self.weight_file))
                 pl_module.backbone.save_pretrained(self.weight_file)
-            #保存最新权重
+            # 保存最新权重
             pl_module.backbone.save_pretrained(self.last_weight_file)
             # 从最新权重加载模型
             pl_module = self.load_model_from_ckpt()
@@ -149,14 +125,14 @@ if __name__ == '__main__':
 
     # 保存最小loss模型
     if lora_args.with_lora:
-        assert deepspeed_config is None,ValueError('lora mode does not support deepspeed')
+        assert deepspeed_config is None, ValueError('lora mode does not support deepspeed')
         checkpoint_callback = MySimpleModelCheckpoint(monitor="loss",
-                              every_n_epochs = 1,
-                              every_n_train_steps=2000 // training_args.gradient_accumulation_steps,
-                              #模型参数
-                              model_args=model_args,
-                              training_args=training_args,
-                              lora_args=lora_args,)
+                                                      every_n_epochs=1,
+                                                      every_n_train_steps=2000 // training_args.gradient_accumulation_steps,
+                                                      # 模型参数
+                                                      model_args=model_args,
+                                                      training_args=training_args,
+                                                      lora_args=lora_args, )
     else:
         checkpoint_callback = ModelCheckpoint('./best_ckpt', monitor='loss',
                                               save_weights_only=False,
@@ -165,18 +141,15 @@ if __name__ == '__main__':
                                               # every_n_train_steps=1000,
                                               every_n_epochs=1)
 
-
     strategy = 'ddp' if torch.cuda.device_count() > 1 else None
     if deepspeed_config is not None and len(deepspeed_config):
-        strategy = DeepSpeedStrategy(config=deepspeed_config,)
-
-
+        strategy = DeepSpeedStrategy(config=deepspeed_config, )
 
     trainer = Trainer(
         callbacks=[checkpoint_callback],
         max_epochs=training_args.max_epochs,
         max_steps=training_args.max_steps,
-        accelerator="gpu",replace_sampler_ddp=False,
+        accelerator="gpu", replace_sampler_ddp=False,
         devices=data_args.devices,
         enable_progress_bar=True,
         default_root_dir=data_args.output_dir,
@@ -189,7 +162,8 @@ if __name__ == '__main__':
 
     dataHelper = NN_DataHelper(model_args, training_args, data_args)
 
-    tokenizer, config, _,_ = dataHelper.load_tokenizer_and_config(tokenizer_class_name=ChatGLMTokenizer,config_class_name=ChatGLMConfig)
+    tokenizer, config, _, _ = dataHelper.load_tokenizer_and_config(tokenizer_class_name=ChatGLMTokenizer,
+                                                                   config_class_name=ChatGLMConfig)
 
     # 额外参数
     checkpoint_callback.tokenizer = tokenizer
@@ -199,13 +173,13 @@ if __name__ == '__main__':
 
     # 缓存数据集
     if data_args.do_train:
-        dataHelper.make_dataset_with_args(data_args.train_file,mixed_data=False,shuffle=True,mode='train')
+        dataHelper.make_dataset_with_args(data_args.train_file, mixed_data=False, shuffle=True, mode='train')
     if data_args.do_eval:
         dataHelper.make_dataset_with_args(data_args.eval_file, mode='eval')
     if data_args.do_test:
-        dataHelper.make_dataset_with_args(data_args.test_file,mode='test')
+        dataHelper.make_dataset_with_args(data_args.test_file, mode='test')
 
-    model = MyTransformer(config=config, model_args=model_args, training_args=training_args)
+    model = MyTransformer(config=config, model_args=model_args, training_args=training_args, lora_args=lora_args)
     frozen_layers = (6, 28)
     for name, param in model.named_parameters():
         for i in range(frozen_layers[0], frozen_layers[1]):
@@ -217,7 +191,6 @@ if __name__ == '__main__':
     # print(model)
     print_trainable_parameters(model)
     # exit()
-
     ckpt_path = './best_ckpt/best.pt'
     if not data_args.convert_onnx:
         # if os.path.exists(ckpt_path):
@@ -226,20 +199,22 @@ if __name__ == '__main__':
         #                                                model_args=model_args,
         #                                                training_args=training_args,lora_args=lora_args)
 
-        #deepspeed 保证整批次
+        # deepspeed 保证整批次
         def dataset_loader_filter_fn(dataset):
             host_num = 1
             limit_count = len(dataset)
-            limit_count = int(limit_count // (data_args.devices * training_args.train_batch_size * host_num)) * (data_args.devices * training_args.train_batch_size * host_num)
+            limit_count = int(limit_count // (data_args.devices * training_args.train_batch_size * host_num)) * (
+                        data_args.devices * training_args.train_batch_size * host_num)
             return dataset.limit(int(limit_count))
+
 
         with_record_iterable_dataset = False
         train_datasets = dataHelper.load_random_sampler(dataHelper.train_files,
                                                         with_load_memory=True,
                                                         collate_fn=dataHelper.collate_fn,
                                                         batch_size=training_args.train_batch_size,
-                                                        drop_last=True,#多卡建议扔掉
-                                                        shuffle=True,infinite=True,
+                                                        drop_last=True,  # 多卡建议扔掉
+                                                        shuffle=True, infinite=True,
                                                         num_processes=trainer.world_size,
                                                         process_index=trainer.global_rank,
                                                         with_record_iterable_dataset=with_record_iterable_dataset,
