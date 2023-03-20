@@ -115,7 +115,7 @@ if __name__ == '__main__':
     os.environ["CUDA_VISIBLE_DEVICES"] = "2"
 
     parser = HfArgumentParser((ModelArguments, TrainingArguments, DataArguments, LoraArguments))
-    model_args, training_args, data_args, lora_args = parser.parse_dict(train_info_args)
+    model_args, training_args, data_args, lora_args = parser.parse_dict(train_info_args, allow_extra_keys=True)
 
     # 并行
     setup_model_profile()
