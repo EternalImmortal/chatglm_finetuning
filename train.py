@@ -33,7 +33,9 @@ class MyTransformer(TransformerChatGlmLMHeadModel, with_pl=True):
 class MySimpleModelCheckpoint(SimpleModelCheckpoint):
     def __init__(self, *args, **kwargs):
         super(MySimpleModelCheckpoint, self).__init__(*args, **kwargs)
-        lora_args: LoraArguments = self.external_kwargs['lora_args']
+        # lora_args: LoraArguments = self.external_kwargs['lora_args']
+        lora_args: LoraArguments = None
+
         if lora_args.with_lora:
             self.weight_file = './best_ckpt'
             self.last_weight_file = './last_ckpt'
@@ -54,7 +56,9 @@ class MySimpleModelCheckpoint(SimpleModelCheckpoint):
             self, trainer: "pl.Trainer", pl_module: "pl.LightningModule"
     ) -> None:
 
-        lora_args: LoraArguments = self.external_kwargs['lora_args']
+        # lora_args: LoraArguments = self.external_kwargs['lora_args']
+        lora_args: LoraArguments = None
+
         # 保存权重
         if not lora_args.with_lora:
             super(MySimpleModelCheckpoint, self).on_save_model(trainer, pl_module)
