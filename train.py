@@ -132,13 +132,19 @@ if __name__ == '__main__':
                                                       training_args=training_args,
                                                       lora_args=lora_args, )
     else:
-        checkpoint_callback = ModelCheckpoint('./best_ckpt', monitor='loss',
-                                              save_weights_only=False,
-                                              save_last=True,
-                                              save_top_k=1,
-                                              every_n_train_steps=50,
-                                              # every_n_epochs=1
-                                              )
+        # checkpoint_callback = ModelCheckpoint('./best_ckpt', monitor='loss',
+        #                                       save_weights_only=False,
+        #                                       save_last=True,
+        #                                       save_top_k=1,
+        #                                       every_n_train_steps=50,
+        #                                       # every_n_epochs=1
+        #                                       )
+        checkpoint_callback = MySimpleModelCheckpoint(monitor="loss",
+                                                      every_n_epochs=1,
+                                                      every_n_train_steps=100 // training_args.gradient_accumulation_steps,
+                                                      # 模型参数
+                                                      model_args=model_args,
+                                                      training_args=training_args)
 
     strategy = 'ddp' if torch.cuda.device_count() > 1 else None
     if deepspeed_config is not None and len(deepspeed_config):
