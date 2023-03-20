@@ -79,7 +79,8 @@ class MySimpleModelCheckpoint(SimpleModelCheckpoint):
 class EvalModelCheckpoint(SimpleModelCheckpoint):
     @staticmethod
     def generate_text(pl_module: MyTransformer, prompt_text, tokenizer: ChatGLMTokenizer, max_target_length, device=2):
-        device = torch.device('cuda:{}'.format(device))
+        # device = torch.device('cuda:{}'.format(device))
+        device = torch.device('cpu')
         # 简易测试生成
         input_ids_ = tokenizer.encode(prompt_text)
         gen_tokens = []
@@ -92,7 +93,7 @@ class EvalModelCheckpoint(SimpleModelCheckpoint):
             batch.clear()
             batch['input_ids'] = [input_ids + gen_ids + tail_ids]
             for k in batch:
-                batch[k] = torch.tensor(batch[k], dtype=torch.int32, device='cpu')
+                batch[k] = torch.tensor(batch[k], dtype=torch.int32, device=device)
 
             out = pl_module.test_step(batch, 0)
             logits = out['outputs'][0]
