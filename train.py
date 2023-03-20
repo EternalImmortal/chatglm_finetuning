@@ -115,7 +115,7 @@ if __name__ == '__main__':
     os.environ["CUDA_VISIBLE_DEVICES"] = "2"
 
     parser = HfArgumentParser((ModelArguments, TrainingArguments, DataArguments, LoraArguments))
-    model_args, training_args, data_args, lora_args = parser.parse_dict(train_info_args, allow_extra_keys=True)
+    model_args, training_args, data_args, lora_args = parser.parse_dict(train_info_args)
 
     # 并行
     setup_model_profile()
@@ -136,7 +136,7 @@ if __name__ == '__main__':
                                               save_weights_only=False,
                                               save_last=True,
                                               save_top_k=1,
-                                              # every_n_train_steps=1000,
+                                              every_n_train_steps=10,
                                               every_n_epochs=1)
 
     strategy = 'ddp' if torch.cuda.device_count() > 1 else None

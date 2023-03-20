@@ -56,7 +56,6 @@ train_info_args = {
     'inference_mode': False,
     'r': 8,
     'target_modules': ['query_key_value'],
-    'target_dtype': '16',
     'lora_alpha': 32,
     # 'enable_lora': [True],
     'enable_lora': None,
