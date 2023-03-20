@@ -9,13 +9,13 @@ from deep_training.nlp.models.chatglm import TransformerChatGlmLMHeadModel, Chat
 from deep_training.nlp.models.lora import LoraArguments, LoraModel
 from deep_training.utils.trainer import ModelCheckpoint, SimpleModelCheckpoint
 
-
 from pytorch_lightning import Trainer
 from pytorch_lightning.strategies import DeepSpeedStrategy
 from transformers import HfArgumentParser
 
 from data_utils import NN_DataHelper, train_info_args, get_deepspeed_config, preprocess, postprocess
 from tokenization_chatglm import ChatGLMTokenizer
+import os
 
 
 class MyTransformer(TransformerChatGlmLMHeadModel, with_pl=True):
@@ -84,8 +84,6 @@ class MySimpleModelCheckpoint(SimpleModelCheckpoint):
             "谈恋爱了，我应该听什么歌？"
         ]
 
-
-
         print('*' * 30, 'generate_text...')
         for text in prefixs:
             input_text = '问：{}\n答：'.format(text)
@@ -114,7 +112,7 @@ def print_trainable_parameters(model):
 
 
 if __name__ == '__main__':
-    os.environ["CUDA_VISIBLE_DEVICES"] = "1,2,3"
+    os.environ["CUDA_VISIBLE_DEVICES"] = "2"
 
     parser = HfArgumentParser((ModelArguments, TrainingArguments, DataArguments, LoraArguments))
     model_args, training_args, data_args, lora_args = parser.parse_dict(train_info_args)
@@ -128,7 +126,7 @@ if __name__ == '__main__':
         assert deepspeed_config is None, ValueError('lora mode does not support deepspeed')
         checkpoint_callback = MySimpleModelCheckpoint(monitor="loss",
                                                       every_n_epochs=1,
-                                                      every_n_train_steps=2000 // training_args.gradient_accumulation_steps,
+                                                      every_n_train_steps=100 // training_args.gradient_accumulation_steps,
                                                       # 模型参数
                                                       model_args=model_args,
                                                       training_args=training_args,
@@ -204,7 +202,7 @@ if __name__ == '__main__':
             host_num = 1
             limit_count = len(dataset)
             limit_count = int(limit_count // (data_args.devices * training_args.train_batch_size * host_num)) * (
-                        data_args.devices * training_args.train_batch_size * host_num)
+                    data_args.devices * training_args.train_batch_size * host_num)
             return dataset.limit(int(limit_count))
 
 
