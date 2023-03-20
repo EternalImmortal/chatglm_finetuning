@@ -78,9 +78,8 @@ class MySimpleModelCheckpoint(SimpleModelCheckpoint):
 
 class EvalModelCheckpoint(SimpleModelCheckpoint):
     @staticmethod
-    def generate_text(pl_module: MyTransformer, prompt_text, tokenizer: ChatGLMTokenizer, max_target_length, device=2):
-        # device = torch.device('cuda:{}'.format(device))
-        device = torch.device('cpu')
+    def generate_text(pl_module: MyTransformer, prompt_text, tokenizer: ChatGLMTokenizer, max_target_length, device=0):
+        device = torch.device('cuda:{}'.format(device))
         # 简易测试生成
         input_ids_ = tokenizer.encode(prompt_text)
         gen_tokens = []
@@ -125,7 +124,7 @@ class EvalModelCheckpoint(SimpleModelCheckpoint):
             input_text = preprocess(input_text)
             output = self.generate_text(pl_module, input_text, tokenizer,
                                         data_args.max_target_length,
-                                        device=2
+                                        device=0
                                         )
 
             print('input', text)
