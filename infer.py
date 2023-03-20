@@ -4,9 +4,10 @@ import os
 import torch
 from deep_training.data_helper import ModelArguments, TrainingArguments, DataArguments
 from deep_training.nlp.models.chatglm import TransformerChatGlmLMHeadModel, setup_model_profile, ChatGLMConfig,ChatGLMForConditionalGeneration
+from deep_training.nlp.models.lora import LoraArguments
 from transformers import HfArgumentParser
 
-from data_utils import train_info_args, NN_DataHelper
+from data_utils import train_info_args, NN_DataHelper,get_deepspeed_config
 from tokenization_chatglm import ChatGLMTokenizer
 
 
@@ -17,28 +18,19 @@ class MyTransformer(TransformerChatGlmLMHeadModel, with_pl=True):
 
 
 if __name__ == '__main__':
-    parser = HfArgumentParser((ModelArguments, TrainingArguments, DataArguments))
-    model_args, training_args, data_args = parser.parse_dict(train_info_args)
+    parser = HfArgumentParser((ModelArguments, TrainingArguments, DataArguments, LoraArguments))
+    model_args, training_args, data_args, _ = parser.parse_dict(train_info_args)
 
     setup_model_profile()
 
     dataHelper = NN_DataHelper(model_args, training_args, data_args)
     tokenizer: ChatGLMTokenizer
-    tokenizer, config, label2id, id2label = dataHelper.load_tokenizer_and_config(
+    tokenizer, config, _,_ = dataHelper.load_tokenizer_and_config(
         tokenizer_class_name=ChatGLMTokenizer, config_class_name=ChatGLMConfig)
 
-
-    #加载新训练权重
-    train_weight = './best_ckpt/best.pt'
-    if os.path.exists(train_weight):
-        config = ChatGLMConfig.from_pretrained('./best_ckpt')
-        model = MyTransformer.load_from_checkpoint(train_weight, config=config,
-                                                   model_args=model_args,
-                                                   training_args=training_args)
-    else:
-        # 官方28层
-        config.num_layers = 28
-        model = MyTransformer(config=config, model_args=model_args, training_args=training_args)
+    # 官方28层
+    config.num_layers = 28
+    model = MyTransformer(config=config, model_args=model_args, training_args=training_args)
 
     model.eval()
 
