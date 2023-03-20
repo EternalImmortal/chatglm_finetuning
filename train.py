@@ -16,7 +16,7 @@ from transformers import HfArgumentParser
 from data_utils import NN_DataHelper, train_info_args, get_deepspeed_config, preprocess, postprocess
 from tokenization_chatglm import ChatGLMTokenizer
 import os
-import np
+import numpy as np
 
 class MyTransformer(TransformerChatGlmLMHeadModel, with_pl=True):
     def __init__(self, *args, **kwargs):
