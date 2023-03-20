@@ -36,7 +36,7 @@ if __name__ == '__main__':
 
     base_model: ChatGLMForConditionalGeneration = model.backbone.model
     # 按需修改，目前只支持 4/8 bit 量化
-    base_model.half().quantize(4).to(torch.device('cuda:0'))
+    base_model.half().to(torch.device('cuda:3'))
 
     with torch.inference_mode():
         response, history = base_model.chat(tokenizer, "你好", history=[],max_length=1024)
