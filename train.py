@@ -92,7 +92,7 @@ class EvalModelCheckpoint(SimpleModelCheckpoint):
             batch.clear()
             batch['input_ids'] = [input_ids + gen_ids + tail_ids]
             for k in batch:
-                batch[k] = torch.tensor(batch[k], dtype=torch.int32, device=device)
+                batch[k] = torch.tensor(batch[k], dtype=torch.int32)
 
             out = pl_module.test_step(batch, 0)
             logits = out['outputs'][0]
