@@ -75,28 +75,37 @@ class MySimpleModelCheckpoint(SimpleModelCheckpoint):
             # 从最新权重加载模型
             pl_module = self.load_model_from_ckpt()
 
-        prefixs = [
-            "我想听一首开心的歌曲",
-            "周五下班了但工作没做完，不太开心",
-            "我想听听一首风格的西方通俗歌曲，希望它是国语，我希望它是原唱。"
-            "我想听听一首风格的西方通俗歌曲，希望它是中国话，它应该是一首演绎水平的歌曲，我希望听到爱情的感觉，我希望它是抖音。"
-            "上山打老虎的人应该听什么歌？"
-            "谈恋爱了，我应该听什么歌？"
-        ]
-
-        print('*' * 30, 'generate_text...')
-        for text in prefixs:
-            input_text = '问：{}\n答：'.format(text)
-            input_text = preprocess(input_text)
-            output = MySimpleModelCheckpoint.generate_text(pl_module, input_text, tokenizer,
-                                                           data_args.max_target_length, device=device)
-
-            print('input', text)
-            print('output', output)
-            print()
-
 
 class EvalModelCheckpoint(SimpleModelCheckpoint):
+    @staticmethod
+    def generate_text(pl_module: MyTransformer, prompt_text, tokenizer: ChatGLMTokenizer, max_target_length, device=0):
+        device = torch.device('cuda:{}'.format(device))
+        # 简易测试生成
+        input_ids_ = tokenizer.encode(prompt_text)
+        gen_tokens = []
+        input_ids = input_ids_[:-2]
+        gen_ids = []
+        tail_ids = input_ids_[-2:]
+
+        batch = {}
+        for i in range(max_target_length):
+            batch.clear()
+            batch['input_ids'] = [input_ids + gen_ids + tail_ids]
+            for k in batch:
+                batch[k] = torch.tensor(batch[k], dtype=torch.int32, device=device)
+
+            out = pl_module.test_step(batch, 0)
+            logits = out['outputs'][0]
+            logits = np.argmax(logits[:, -1], axis=-1)
+            logits = logits[0].tolist()
+            gen_ids.append(logits)
+            token = tokenizer.decode([logits])
+            gen_tokens.append(token)
+
+        out_text = ''.join(gen_tokens)
+        out_text = postprocess(out_text)
+        return out_text
+
     def on_save_model(
             self, trainer: "pl.Trainer", pl_module: "pl.LightningModule"
     ) -> None:
@@ -113,10 +122,10 @@ class EvalModelCheckpoint(SimpleModelCheckpoint):
         for text in prefixs:
             input_text = '问：{}\n答：'.format(text)
             input_text = preprocess(input_text)
-            output = MySimpleModelCheckpoint.generate_text(pl_module, input_text, tokenizer,
-                                                           data_args.max_target_length,
-                                                           # device=device
-                                                           )
+            output = self.generate_text(pl_module, input_text, tokenizer,
+                                        data_args.max_target_length,
+                                        device=2
+                                        )
 
             print('input', text)
             print('output', output)
