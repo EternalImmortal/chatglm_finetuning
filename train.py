@@ -136,8 +136,9 @@ if __name__ == '__main__':
                                               save_weights_only=False,
                                               save_last=True,
                                               save_top_k=1,
-                                              every_n_train_steps=10,
-                                              every_n_epochs=1)
+                                              every_n_train_steps=50,
+                                              # every_n_epochs=1
+                                              )
 
     strategy = 'ddp' if torch.cuda.device_count() > 1 else None
     if deepspeed_config is not None and len(deepspeed_config):
