@@ -19,7 +19,7 @@ class MyTransformer(TransformerChatGlmLMHeadModel, with_pl=True):
 
 if __name__ == '__main__':
     parser = HfArgumentParser((ModelArguments, TrainingArguments, DataArguments, LoraArguments))
-    model_args, training_args, data_args, _ = parser.parse_dict(train_info_args)
+    model_args, training_args, data_args, _ = parser.parse_dict(train_info_args, allow_extra_keys=True)
 
     setup_model_profile()
 
