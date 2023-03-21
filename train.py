@@ -110,12 +110,14 @@ class EvalModelCheckpoint(SimpleModelCheckpoint):
     def on_save_model(
             self, trainer: "pl.Trainer", pl_module: "pl.LightningModule"
     ) -> None:
+        super(EvalModelCheckpoint, self).on_save_model(trainer, pl_module)
+
         system = "你是一个个性化的歌曲推荐系统。用《歌曲》-《歌手》的格式返回6首中文或英文歌曲。"
         prefixes = [
             "我想听一首开心的歌曲",
             "周五下班了但工作没做完，不太开心",
             "我想听听一首风格的西方通俗歌曲，希望它是国语，我希望它是原唱。",
-            "我想听听一首风格的西方通俗歌曲，希望它是中国话，它应该是一首演绎水平的歌曲，我希望听到爱情的感觉，我希望它是抖音。",
+            "我想听听一首风格的西方通俗歌曲，希望它是中文的抖音神曲，我希望听到爱情的感觉。",
             "上山打老虎的人应该听什么歌？",
             "谈恋爱了，我应该听什么歌？",
         ]
@@ -134,7 +136,7 @@ class EvalModelCheckpoint(SimpleModelCheckpoint):
             print('output', output)
             print('length', len(output))
 
-        super(EvalModelCheckpoint, self).on_save_model(trainer, pl_module)
+
 
 
 def print_trainable_parameters(model):
@@ -167,7 +169,7 @@ if __name__ == '__main__':
         assert deepspeed_config is None, ValueError('lora mode does not support deepspeed')
         checkpoint_callback = MySimpleModelCheckpoint(monitor="loss",
                                                       every_n_epochs=1,
-                                                      every_n_train_steps=3000 // training_args.gradient_accumulation_steps,
+                                                      every_n_train_steps=1000 // training_args.gradient_accumulation_steps,
                                                       # 模型参数
                                                       model_args=model_args,
                                                       training_args=training_args,
