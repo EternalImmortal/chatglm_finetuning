@@ -64,7 +64,7 @@ train_info_args = {
 }
 
 # lora 模式暂时不支持deepspeed
-enable_deepspeed = False
+enable_deepspeed = True
 
 data_conf = {
     'stride': 50,
