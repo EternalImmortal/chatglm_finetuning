@@ -17,26 +17,7 @@ class MyTransformer(TransformerChatGlmLMHeadModel, with_pl=True):
         super(MyTransformer, self).__init__(*args, **kwargs)
 
 
-if __name__ == '__main__':
-    parser = HfArgumentParser((ModelArguments, TrainingArguments, DataArguments, LoraArguments))
-    model_args, training_args, data_args, _ = parser.parse_dict(train_info_args, allow_extra_keys=True)
-
-    setup_model_profile()
-
-    dataHelper = NN_DataHelper(model_args, training_args, data_args)
-    tokenizer: ChatGLMTokenizer
-    tokenizer, config, _, _ = dataHelper.load_tokenizer_and_config(
-        tokenizer_class_name=ChatGLMTokenizer, config_class_name=ChatGLMConfig)
-
-    # 官方28层
-    config.num_layers = 28
-    # model = MyTransformer(config=config, model_args=model_args, training_args=training_args)
-    checkpoint_path = './no_lora_checkpoint/best.pt'
-    model = MyTransformer.load_from_checkpoint(checkpoint_path=checkpoint_path,
-                                               config=config,
-                                               training_args=training_args,
-                                               )
-
+def infer_case(model):
     model.eval()
 
     base_model: ChatGLMForConditionalGeneration = model.backbone.model
@@ -56,5 +37,27 @@ if __name__ == '__main__':
             response, history = base_model.chat(tokenizer, question, history=[], max_length=1024)
             print(question, ' ', response)
 
-        # response, history = base_model.chat(tokenizer, "写一个诗歌，关于冬天", history=[],max_length=30)
-        # print('写一个诗歌，关于冬天',' ',response)
+
+if __name__ == '__main__':
+    parser = HfArgumentParser((ModelArguments, TrainingArguments, DataArguments, LoraArguments))
+    model_args, training_args, data_args, _ = parser.parse_dict(train_info_args, allow_extra_keys=True)
+
+    setup_model_profile()
+
+    dataHelper = NN_DataHelper(model_args, training_args, data_args)
+    tokenizer: ChatGLMTokenizer
+    tokenizer, config, _, _ = dataHelper.load_tokenizer_and_config(
+        tokenizer_class_name=ChatGLMTokenizer, config_class_name=ChatGLMConfig)
+
+    # 官方28层
+    config.num_layers = 28
+    model = MyTransformer(config=config, model_args=model_args, training_args=training_args)
+    infer_case(model)
+    checkpoint_path = './no_lora_checkpoint/best.pt'
+    model = MyTransformer.load_from_checkpoint(checkpoint_path=checkpoint_path,
+                                               config=config,
+                                               training_args=training_args,
+                                               )
+    infer_case(model)
+    # response, history = base_model.chat(tokenizer, "写一个诗歌，关于冬天", history=[],max_length=30)
+    # print('写一个诗歌，关于冬天',' ',response)
