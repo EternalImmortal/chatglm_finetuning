@@ -182,12 +182,14 @@ if __name__ == '__main__':
         #                                       # every_n_epochs=1
         #                                       )
         print('*' * 20, "no lora, use EvalModelCheckpoint")
-        checkpoint_callback = EvalModelCheckpoint('.no_lora_checkpoints/best_ckpt', monitor='loss',
+        checkpoint_callback = EvalModelCheckpoint(monitor='loss',
                                                   save_weights_only=False,
                                                   save_last=True,
                                                   save_top_k=1,
                                                   every_n_train_steps=100,
-                                                  every_n_epochs=1
+                                                  every_n_epochs=1,
+                                                  weight_file='.no_lora_checkpoint/best.pt',  # 保存权重名字
+                                                  last_weight_file='.no_lora_checkpoint/last.pt',  # 每评估一次保存一次权重
                                                   )
 
     strategy = 'ddp' if torch.cuda.device_count() > 1 else None
