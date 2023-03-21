@@ -51,7 +51,7 @@ if __name__ == '__main__':
         gMask = "[gMask]"
         for question in prefixs:
             response, history = base_model.chat(tokenizer, "", system + question + gMask, history=[], max_length=1024)
-            print("Q: ", question, '\nAns: ', response)
+            print("Q: ", system + question + gMask, '\nAns: ', response)
 
         # response, history = base_model.chat(tokenizer, "写一个诗歌，关于冬天", history=[],max_length=30)
         # print('写一个诗歌，关于冬天',' ',response)
