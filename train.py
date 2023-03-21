@@ -188,7 +188,7 @@ if __name__ == '__main__':
                                                   save_weights_only=False,
                                                   save_last=True,
                                                   save_top_k=1,
-                                                  every_n_train_steps=1000,
+                                                  every_n_train_steps=200,
                                                   every_n_epochs=1,
                                                   weight_file='./no_lora_checkpoint/best.pt',  # 保存权重名字
                                                   last_weight_file='./no_lora_checkpoint/last.pt',  # 每评估一次保存一次权重
