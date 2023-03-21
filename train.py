@@ -186,7 +186,7 @@ if __name__ == '__main__':
                                                   save_weights_only=False,
                                                   save_last=True,
                                                   save_top_k=1,
-                                                  every_n_train_steps=10,
+                                                  every_n_train_steps=100,
                                                   every_n_epochs=1
                                                   )
 
