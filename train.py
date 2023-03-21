@@ -130,7 +130,7 @@ class EvalModelCheckpoint(SimpleModelCheckpoint):
 
             print('input', text)
             print('output', output)
-            print()
+            print('length', len(output))
 
 
 def print_trainable_parameters(model):
