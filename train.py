@@ -184,7 +184,7 @@ if __name__ == '__main__':
     #     print('*' * 20, "no lora, use EvalModelCheckpoint")
     checkpoint_callback1 = MySimpleModelCheckpoint(monitor="loss",
                                                    every_n_epochs=1,
-                                                   every_n_train_steps=3000 // training_args.gradient_accumulation_steps,
+                                                   every_n_train_steps=20 // training_args.gradient_accumulation_steps,
                                                    # 模型参数
                                                    model_args=model_args,
                                                    training_args=training_args,
@@ -194,7 +194,7 @@ if __name__ == '__main__':
                                                save_weights_only=False,
                                                save_last=True,
                                                save_top_k=1,
-                                               every_n_train_steps=2000,
+                                               every_n_train_steps=10,
                                                every_n_epochs=1
                                                )
 
@@ -235,7 +235,7 @@ if __name__ == '__main__':
         dataHelper.make_dataset_with_args(data_args.test_file, mode='test')
 
     model = MyTransformer(config=config, model_args=model_args, training_args=training_args, lora_args=lora_args)
-    frozen_layers = (9, 28)
+    frozen_layers = (8, 28)
     for name, param in model.named_parameters():
         for i in range(frozen_layers[0], frozen_layers[1]):
             layer_name = f'layers.{i}.'
