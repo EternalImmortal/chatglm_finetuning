@@ -177,11 +177,12 @@ if __name__ == '__main__':
         #                                       every_n_train_steps=50,
         #                                       # every_n_epochs=1
         #                                       )
+        print('*' * 20, "no lora, use EvalModelCheckpoint")
         checkpoint_callback = EvalModelCheckpoint('./best_ckpt', monitor='loss',
                                                   save_weights_only=False,
                                                   save_last=True,
                                                   save_top_k=1,
-                                                  every_n_train_steps=10,
+                                                  every_n_train_steps=200,
                                                   every_n_epochs=1
                                                   )
 
