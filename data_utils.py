@@ -22,7 +22,7 @@ from transformers import HfArgumentParser
 from tokenization_chatglm import ChatGLMTokenizer
 
 train_info_args = {
-    'devices': 1,
+    'devices': 4,
     'data_backend': 'record',
     'model_type': 'chatglm',
     # 预训练模型路径 , 从0训练，则置空
@@ -64,7 +64,7 @@ train_info_args = {
 }
 
 # lora 模式暂时不支持deepspeed
-enable_deepspeed = False
+enable_deepspeed = True
 
 data_conf = {
     'stride': 50,
