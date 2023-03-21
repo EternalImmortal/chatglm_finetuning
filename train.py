@@ -109,6 +109,7 @@ class EvalModelCheckpoint(SimpleModelCheckpoint):
     def on_save_model(
             self, trainer: "pl.Trainer", pl_module: "pl.LightningModule"
     ) -> None:
+        system = "你是一个个性化的歌曲推荐系统。用《歌曲》-《歌手》的格式返回6首中文或英文歌曲。"
         prefixs = [
             "我想听一首开心的歌曲",
             "周五下班了但工作没做完，不太开心",
@@ -120,7 +121,7 @@ class EvalModelCheckpoint(SimpleModelCheckpoint):
 
         print('*' * 30, 'generate_text...')
         for text in prefixs:
-            input_text = '问：{}\n答：'.format(text)
+            input_text = '问：{}\n答：'.format(system + text)
             input_text = preprocess(input_text)
             output = self.generate_text(pl_module, input_text, tokenizer,
                                         data_args.max_target_length,
