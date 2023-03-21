@@ -134,7 +134,7 @@ class EvalModelCheckpoint(SimpleModelCheckpoint):
             print('input', question)
             print('output', output)
             print('length', len(output))
-        super(EvalModelCheckpoint, self).on_save_model(trainer, pl_module)
+        # super(EvalModelCheckpoint, self).on_save_model(trainer, pl_module)
 
 
 
