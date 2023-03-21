@@ -111,7 +111,7 @@ class EvalModelCheckpoint(SimpleModelCheckpoint):
             self, trainer: "pl.Trainer", pl_module: "pl.LightningModule"
     ) -> None:
         system = "你是一个个性化的歌曲推荐系统。用《歌曲》-《歌手》的格式返回6首中文或英文歌曲。"
-        prefixs = [
+        prefixes = [
             "我想听一首开心的歌曲",
             "周五下班了但工作没做完，不太开心",
             "我想听听一首风格的西方通俗歌曲，希望它是国语，我希望它是原唱。",
@@ -121,7 +121,7 @@ class EvalModelCheckpoint(SimpleModelCheckpoint):
         ]
 
         print('*' * 30, 'generate_text...')
-        for text in prefixs:
+        for text in prefixes:
             question = text + system
             input_text = '问：{}\n答：'.format(question)
             input_text = preprocess(input_text)
@@ -186,10 +186,10 @@ if __name__ == '__main__':
                                                   save_weights_only=False,
                                                   save_last=True,
                                                   save_top_k=1,
-                                                  every_n_train_steps=100,
+                                                  every_n_train_steps=5000,
                                                   every_n_epochs=1,
-                                                  weight_file='.no_lora_checkpoint/best.pt',  # 保存权重名字
-                                                  last_weight_file='.no_lora_checkpoint/last.pt',  # 每评估一次保存一次权重
+                                                  weight_file='./no_lora_checkpoint/best.pt',  # 保存权重名字
+                                                  last_weight_file='./no_lora_checkpoint/last.pt',  # 每评估一次保存一次权重
                                                   )
 
     strategy = 'ddp' if torch.cuda.device_count() > 1 else None

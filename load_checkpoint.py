@@ -30,16 +30,21 @@ if __name__ == '__main__':
 
     # 官方28层
     config.num_layers = 28
-    model = MyTransformer(config=config, model_args=model_args, training_args=training_args)
+    # model = MyTransformer(config=config, model_args=model_args, training_args=training_args)
+    checkpoint_path = './no_lora_checkpoint/best.pt'
+    model = MyTransformer.load_from_checkpoint(checkpoint_path=checkpoint_path,
+                                               config=config,
+                                               training_args=training_args,
+                                               )
 
     model.eval()
 
     base_model: ChatGLMForConditionalGeneration = model.backbone.model
     # 按需修改，目前只支持 4/8 bit 量化
-    base_model.half().to(torch.device('cuda:3'))
+    base_model.half().to(torch.device('cuda:0'))
 
     with torch.inference_mode():
-        prefixs = [
+        prefixes = [
             "我想听一首开心的歌曲",
             "周五下班了但工作没做完，不太开心",
             "我想听听一首风格的西方通俗歌曲，希望它是国语，我希望它是原唱。"
@@ -47,7 +52,7 @@ if __name__ == '__main__':
             "上山打老虎的人应该听什么歌？"
             "谈恋爱了，我应该听什么歌？"
         ]
-        for question in prefixs:
+        for question in prefixes:
             response, history = base_model.chat(tokenizer, question, history=[], max_length=1024)
             print(question, ' ', response)
 
