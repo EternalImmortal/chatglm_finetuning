@@ -134,6 +134,8 @@ class EvalModelCheckpoint(SimpleModelCheckpoint):
             print('output', output)
             print('length', len(output))
 
+        super(EvalModelCheckpoint, self).on_save_model(trainer, pl_module)
+
 
 def print_trainable_parameters(model):
     """
@@ -160,50 +162,40 @@ if __name__ == '__main__':
     setup_model_profile()
     deepspeed_config = get_deepspeed_config()
 
-    # checkpoint_callback1, checkpoint_callback2 = None
+    # 保存最小loss模型
+    if lora_args.with_lora:
+        assert deepspeed_config is None, ValueError('lora mode does not support deepspeed')
+        checkpoint_callback = MySimpleModelCheckpoint(monitor="loss",
+                                                      every_n_epochs=1,
+                                                      every_n_train_steps=3000 // training_args.gradient_accumulation_steps,
+                                                      # 模型参数
+                                                      model_args=model_args,
+                                                      training_args=training_args,
+                                                      lora_args=lora_args, )
 
-    # # 保存最小loss模型
-    # if lora_args.with_lora:
-    #     assert deepspeed_config is None, ValueError('lora mode does not support deepspeed')
-    #     checkpoint_callback1 = MySimpleModelCheckpoint(monitor="loss",
-    #                                                   every_n_epochs=1,
-    #                                                   every_n_train_steps=3000 // training_args.gradient_accumulation_steps,
-    #                                                   # 模型参数
-    #                                                   model_args=model_args,
-    #                                                   training_args=training_args,
-    #                                                   lora_args=lora_args, )
-    #
-    # else:
-    #     # checkpoint_callback = ModelCheckpoint('./best_ckpt', monitor='loss',
-    #     #                                       save_weights_only=False,
-    #     #                                       save_last=True,
-    #     #                                       save_top_k=1,
-    #     #                                       every_n_train_steps=50,
-    #     #                                       # every_n_epochs=1
-    #     #                                       )
-    #     print('*' * 20, "no lora, use EvalModelCheckpoint")
-    checkpoint_callback1 = MySimpleModelCheckpoint(monitor="loss",
-                                                   every_n_epochs=1,
-                                                   every_n_train_steps=20 // training_args.gradient_accumulation_steps,
-                                                   # 模型参数
-                                                   model_args=model_args,
-                                                   training_args=training_args,
-                                                   lora_args=lora_args, )
-
-    checkpoint_callback2 = EvalModelCheckpoint('./best_ckpt', monitor='loss',
-                                               save_weights_only=False,
-                                               save_last=True,
-                                               save_top_k=1,
-                                               every_n_train_steps=10,
-                                               every_n_epochs=1
-                                               )
+    else:
+        # checkpoint_callback = ModelCheckpoint('./best_ckpt', monitor='loss',
+        #                                       save_weights_only=False,
+        #                                       save_last=True,
+        #                                       save_top_k=1,
+        #                                       every_n_train_steps=50,
+        #                                       # every_n_epochs=1
+        #                                       )
+        print('*' * 20, "no lora, use EvalModelCheckpoint")
+        checkpoint_callback = EvalModelCheckpoint('.no_lora_checkpoints/best_ckpt', monitor='loss',
+                                                  save_weights_only=False,
+                                                  save_last=True,
+                                                  save_top_k=1,
+                                                  every_n_train_steps=10,
+                                                  every_n_epochs=1
+                                                  )
 
     strategy = 'ddp' if torch.cuda.device_count() > 1 else None
     if deepspeed_config is not None and len(deepspeed_config):
         strategy = DeepSpeedStrategy(config=deepspeed_config, )
 
     trainer = Trainer(
-        callbacks=[checkpoint_callback1, checkpoint_callback2],
+        callbacks=[checkpoint_callback],
         max_epochs=training_args.max_epochs,
         max_steps=training_args.max_steps,
         accelerator="gpu", replace_sampler_ddp=False,
@@ -222,8 +214,8 @@ if __name__ == '__main__':
     tokenizer, config, _, _ = dataHelper.load_tokenizer_and_config(tokenizer_class_name=ChatGLMTokenizer,
                                                                    config_class_name=ChatGLMConfig)
     # 额外参数
-    checkpoint_callback2.tokenizer = tokenizer
-    checkpoint_callback2.data_args = data_args
+    checkpoint_callback.tokenizer = tokenizer
+    checkpoint_callback.data_args = data_args
     config.save_pretrained('best_ckpt')
 
     # 缓存数据集
