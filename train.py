@@ -121,14 +121,15 @@ class EvalModelCheckpoint(SimpleModelCheckpoint):
 
         print('*' * 30, 'generate_text...')
         for text in prefixs:
-            input_text = '问：{}\n答：'.format(system + text)
+            question = text + system
+            input_text = '问：{}\n答：'.format(question)
             input_text = preprocess(input_text)
             output = self.generate_text(pl_module, input_text, tokenizer,
                                         data_args.max_target_length,
                                         device=0
                                         )
 
-            print('input', text)
+            print('input', question)
             print('output', output)
             print('length', len(output))
 
