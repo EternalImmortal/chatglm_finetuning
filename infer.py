@@ -47,9 +47,11 @@ if __name__ == '__main__':
             "上山打老虎的人应该听什么歌？"
             "谈恋爱了，我应该听什么歌？"
         ]
+        system = "你是一个个性化的歌曲推荐系统。用《歌曲》-《歌手》的格式返回6首中文或英文歌曲。"
+        gMask = "[gMask]"
         for question in prefixs:
-            response, history = base_model.chat(tokenizer, question, history=[], max_length=1024)
-            print(question, ' ', response)
+            response, history = base_model.chat(tokenizer, "", system + question + gMask, history=[], max_length=1024)
+            print("Q: ", question, '\nAns: ', response)
 
         # response, history = base_model.chat(tokenizer, "写一个诗歌，关于冬天", history=[],max_length=30)
         # print('写一个诗歌，关于冬天',' ',response)
