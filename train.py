@@ -110,7 +110,6 @@ class EvalModelCheckpoint(SimpleModelCheckpoint):
     def on_save_model(
             self, trainer: "pl.Trainer", pl_module: "pl.LightningModule"
     ) -> None:
-        super(EvalModelCheckpoint, self).on_save_model(trainer, pl_module)
 
         system = "你是一个个性化的歌曲推荐系统。用《歌曲》-《歌手》的格式返回6首中文或英文歌曲。"
         prefixes = [
@@ -135,6 +134,7 @@ class EvalModelCheckpoint(SimpleModelCheckpoint):
             print('input', question)
             print('output', output)
             print('length', len(output))
+        super(EvalModelCheckpoint, self).on_save_model(trainer, pl_module)
 
 
 
