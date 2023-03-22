@@ -271,8 +271,8 @@ if __name__ == '__main__':
                                                         with_record_iterable_dataset=with_record_iterable_dataset,
                                                         dataset_loader_filter_fn=dataset_loader_filter_fn if not with_record_iterable_dataset else None)
 
-        # if train_datasets is not None:
-        #     trainer.fit(model, train_dataloaders=train_datasets)
+        if train_datasets is not None:
+            trainer.fit(model, train_dataloaders=train_datasets)
 
     else:
         if not lora_args.with_lora:
