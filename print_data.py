@@ -137,8 +137,6 @@ class EvalModelCheckpoint(SimpleModelCheckpoint):
         # super(EvalModelCheckpoint, self).on_save_model(trainer, pl_module)
 
 
-
-
 def print_trainable_parameters(model):
     """
     Prints the number of trainable parameters in the model.
@@ -230,19 +228,6 @@ if __name__ == '__main__':
     if data_args.do_test:
         dataHelper.make_dataset_with_args(data_args.test_file, mode='test')
 
-    model = MyTransformer(config=config, model_args=model_args, training_args=training_args, lora_args=lora_args)
-    frozen_layers = (0, 20)
-    for name, param in model.named_parameters():
-        for i in range(frozen_layers[0], frozen_layers[1]):
-            layer_name = f'layers.{i}.'
-            # if name contain layer_name, then freeze the layer
-            if layer_name in name:
-                param.requires_grad = False
-                break
-    print(model)
-    print_trainable_parameters(model)
-    # exit()
-    ckpt_path = './best_ckpt/best.pt'
     if not data_args.convert_onnx:
         # if os.path.exists(ckpt_path):
         #     # 加载权重继续训练
@@ -260,48 +245,14 @@ if __name__ == '__main__':
 
 
         with_record_iterable_dataset = False
-        train_datasets = dataHelper.load_random_sampler(dataHelper.train_files,
-                                                        with_load_memory=True,
-                                                        collate_fn=dataHelper.collate_fn,
-                                                        batch_size=training_args.train_batch_size,
-                                                        drop_last=True,  # 多卡建议扔掉
-                                                        shuffle=True, infinite=True,
-                                                        num_processes=trainer.world_size,
-                                                        process_index=trainer.global_rank,
-                                                        with_record_iterable_dataset=with_record_iterable_dataset,
-                                                        dataset_loader_filter_fn=dataset_loader_filter_fn if not with_record_iterable_dataset else None)
-
-        if train_datasets is not None:
-            trainer.fit(model, train_dataloaders=train_datasets)
-
-    else:
-        if not lora_args.with_lora:
-            # 加载权重
-            model = MyTransformer.load_from_checkpoint(ckpt_path, config=config,
-                                                       model_args=model_args,
-                                                       training_args=training_args,
-                                                       lora_args=lora_args)
-            input_sample = (
-                ("input_ids", torch.ones(size=(1, 128), dtype=torch.int32)),
-            )
-            input_names = ("input_ids",)
-            output_names = ("pred_ids",)
-            dynamic_axes = None or {"input_ids": [0, 1],
-                                    "pred_ids": [0, 1]}
-            model.convert_to_onnx('./best_ckpt/best.onnx',
-                                  input_sample=input_sample,
-                                  input_names=input_names,
-                                  output_names=output_names,
-                                  dynamic_axes=dynamic_axes)
-        else:
-            # 加载权重
-            lora_args = LoraArguments.from_pretrained('./best_ckpt')
-            pl_module = MyTransformer(lora_args=lora_args,
-                                      config=config,
-                                      model_args=model_args,
-                                      training_args=training_args)
-            # 二次加载权重
-            pl_module.backbone.from_pretrained(pl_module.backbone.model, './best_ckpt')
-
-            model_: ChatGLMForConditionalGeneration
-            model_ = pl_module.backbone.model.model
+        train_datasets = dataHelper.load_random_sampler(
+            dataHelper.train_files,
+            with_load_memory=True,
+            collate_fn=dataHelper.collate_fn,
+            batch_size=training_args.train_batch_size,
+            drop_last=True,  # 多卡建议扔掉
+            shuffle=True, infinite=True,
+            num_processes=trainer.world_size,
+            process_index=trainer.global_rank,
+            with_record_iterable_dataset=with_record_iterable_dataset,
+            dataset_loader_filter_fn=dataset_loader_filter_fn if not with_record_iterable_dataset else None)
