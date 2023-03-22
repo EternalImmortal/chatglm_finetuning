@@ -257,3 +257,4 @@ if __name__ == '__main__':
             with_record_iterable_dataset=with_record_iterable_dataset,
             dataset_loader_filter_fn=dataset_loader_filter_fn if not with_record_iterable_dataset else None)
         print(train_datasets)
+        print(train_datasets.dataset.__getitem__(0))
