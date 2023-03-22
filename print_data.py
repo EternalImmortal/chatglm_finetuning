@@ -256,3 +256,4 @@ if __name__ == '__main__':
             process_index=trainer.global_rank,
             with_record_iterable_dataset=with_record_iterable_dataset,
             dataset_loader_filter_fn=dataset_loader_filter_fn if not with_record_iterable_dataset else None)
+        print(train_datasets)
