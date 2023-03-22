@@ -111,7 +111,7 @@ class EvalModelCheckpoint(SimpleModelCheckpoint):
             self, trainer: "pl.Trainer", pl_module: "pl.LightningModule"
     ) -> None:
 
-        system = "你是一个个性化的歌曲推荐系统。用《歌曲》-《歌手》的格式返回6首中文或英文歌曲。"
+        system = "用 歌手-《歌曲》的格式为我返回一首歌。"
         prefixes = [
             "我想听一首开心的歌曲",
             "周五下班了但工作没做完，不太开心",
