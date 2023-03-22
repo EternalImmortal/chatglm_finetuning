@@ -31,7 +31,7 @@ train_info_args = {
     'tokenizer_name': '/data/text2music/ChatGLM-6B/local',
     'convert_onnx': False,  # 转换onnx模型
     'do_train': True,
-    'train_file': ['./data/LLM_top2w_tag_v3.json'],
+    'train_file': ['./data/Test_tag.json.json'],
     'eval_file': ['./data/LLM_eval.json'],
     'max_epochs': 8,
     'max_steps': -1,
@@ -122,7 +122,6 @@ class NN_DataHelper(DataHelper):
                 input_ids_all += input_ids
 
             input_ids_all += [tokenizer.eos_token_id]
-
         if not hasattr(self, 'sptoken'):
             self.sptoken = tokenizer.encode(text="")[-2:]
 
@@ -147,7 +146,9 @@ class NN_DataHelper(DataHelper):
                 'seqlen': seqlen
             }
             ds.append(d)
-
+        print("Debug -------------------------")
+        for d in ds:
+            print(d)
 
         if self.index < 3:
             print(ds[0])
