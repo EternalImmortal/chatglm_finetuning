@@ -32,14 +32,13 @@ train_info_args = {
     'convert_onnx': False,  # 转换onnx模型
     'do_train': True,
     'train_file': ['./data/Test_tag.json'],
-    'eval_file': ['./data/LLM_eval.json'],
-    'max_epochs': 8,
+    'max_epochs': 20,
     'max_steps': -1,
-    'optimizer': 'lion',  # one of adamw,adam,lamb,lion
-    'train_batch_size': 1,
-    'eval_batch_size': 1,
+    'optimizer': 'lion', # one of adamw,adam,lamb,lion
+    'train_batch_size': 4,
+    'eval_batch_size': 2,
     'test_batch_size': 2,
-    'learning_rate': 5e-5,
+    'learning_rate': 2e-5,  #
     'adam_epsilon': 1e-8,
     'gradient_accumulation_steps': 1,
     'max_grad_norm': 1.0,
@@ -53,9 +52,10 @@ train_info_args = {
 
     ##############  lora模块
     'with_lora': False,  # 是否启用lora模块
-    'inference_mode': False,
+    'inference_mode': False, # 推理模型, 不需要手动设置
     'r': 8,
     'target_modules': ['query_key_value'],
+    'target_dtype': '16',
     'lora_alpha': 32,
     # 'enable_lora': [True],
     'enable_lora': None,
@@ -69,6 +69,7 @@ enable_deepspeed = False
 data_conf = {
     'stride': 50,
     'count_per_group': 1,
+    'random_prompt': False
 }
 
 assert data_conf['stride'] > 0
@@ -115,13 +116,13 @@ class NN_DataHelper(DataHelper):
         input_ids_all = []
         for examples in examples_batch:
             for idx, (sid, q, a) in enumerate(examples):
-                text = "[Round {}]\n问：{}\n答：{}".format(sid, q, a)
+                text = "[Round {}]\n问：{}\n答：".format(sid, q, a)
                 input_ids = tokenizer.encode(text=text, add_special_tokens=False)
                 if len(input_ids) <= 3:
                     continue
                 input_ids_all += input_ids
 
-            input_ids_all += [tokenizer.eos_token_id]
+            input_ids_all += [tokenizer.eos_token_id]* 2
         if not hasattr(self, 'sptoken'):
             self.sptoken = tokenizer.encode(text="")[-2:]
 
@@ -146,9 +147,7 @@ class NN_DataHelper(DataHelper):
                 'seqlen': seqlen
             }
             ds.append(d)
-        print("Debug -------------------------")
-        for d in ds:
-            print(d)
+
 
         if self.index < 3:
             print(ds[0])
@@ -188,7 +187,7 @@ class NN_DataHelper(DataHelper):
                 if i < 10:
                     print(paragraph)
                 qa = []
-                for sid, session in enumerate(paragraph):
+                for sid,session in enumerate(paragraph):
                     q = session['q']
                     answers_list = session['a']
                     q = preprocess(q)
@@ -209,6 +208,7 @@ class NN_DataHelper(DataHelper):
         if not hasattr(self,'sptoken'):
             self.sptoken = self.tokenizer.encode(text="")[-2:]
 
+        random_prompt = data_conf['random_prompt']
         o = {}
         for i, b in enumerate(batch):
             if i == 0:
@@ -222,7 +222,11 @@ class NN_DataHelper(DataHelper):
 
         seqlens = o.pop('seqlen')
         input_ids = o['input_ids']
-        p = np.random.randint(1, torch.min(seqlens)-1, dtype=np.int64).tolist()
+
+        if random_prompt:
+            p = np.random.randint(0, torch.min(seqlens)-1, dtype=np.int64).tolist()
+        else:
+            p = 0
         da = torch.tensor(self.sptoken,dtype=input_ids.dtype)
         da = da.unsqueeze(0).expand(input_ids.size(0),da.size(0))
 

@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import logging
+import os
 from typing import Dict, Any, Optional
 
 import torch
@@ -9,13 +10,13 @@ from deep_training.nlp.models.chatglm import TransformerChatGlmLMHeadModel, Chat
 from deep_training.nlp.models.lora import LoraArguments, LoraModel
 from deep_training.utils.trainer import ModelCheckpoint, SimpleModelCheckpoint
 
+from pytorch_lightning.callbacks.lr_monitor import LearningRateMonitor
 from pytorch_lightning import Trainer
 from pytorch_lightning.strategies import DeepSpeedStrategy
 from transformers import HfArgumentParser
 
 from data_utils import NN_DataHelper, train_info_args, get_deepspeed_config, preprocess, postprocess
 from tokenization_chatglm import ChatGLMTokenizer
-import os
 import numpy as np
 
 
@@ -137,8 +138,6 @@ class EvalModelCheckpoint(SimpleModelCheckpoint):
         # super(EvalModelCheckpoint, self).on_save_model(trainer, pl_module)
 
 
-
-
 def print_trainable_parameters(model):
     """
     Prints the number of trainable parameters in the model.
@@ -193,13 +192,12 @@ if __name__ == '__main__':
                                                   weight_file='./no_lora_checkpoint/best.pt',  # 保存权重名字
                                                   last_weight_file='./no_lora_checkpoint/last.pt',  # 每评估一次保存一次权重
                                                   )
-
     strategy = 'ddp' if torch.cuda.device_count() > 1 else None
     if deepspeed_config is not None and len(deepspeed_config):
         strategy = DeepSpeedStrategy(config=deepspeed_config, )
 
     trainer = Trainer(
-        # callbacks=[checkpoint_callback],
+        callbacks=[checkpoint_callback,LearningRateMonitor(logging_interval='step')],
         max_epochs=training_args.max_epochs,
         max_steps=training_args.max_steps,
         accelerator="gpu", replace_sampler_ddp=False,
@@ -259,6 +257,7 @@ if __name__ == '__main__':
             return dataset.limit(int(limit_count))
 
 
+
         with_record_iterable_dataset = False
         train_datasets = dataHelper.load_random_sampler(dataHelper.train_files,
                                                         with_load_memory=True,
@@ -301,7 +300,7 @@ if __name__ == '__main__':
                                       model_args=model_args,
                                       training_args=training_args)
             # 二次加载权重
-            pl_module.backbone.from_pretrained(pl_module.backbone.model, './best_ckpt')
+            pl_module.backbone.from_pretrained(pl_module.backbone.model, pretrained_model_name_or_path='./best_ckpt',lora_config=lora_args)
 
             model_: ChatGLMForConditionalGeneration
             model_ = pl_module.backbone.model.model

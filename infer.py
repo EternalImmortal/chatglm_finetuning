@@ -18,6 +18,7 @@ class MyTransformer(TransformerChatGlmLMHeadModel, with_pl=True):
 
 
 if __name__ == '__main__':
+    train_info_args['seed'] = None
     parser = HfArgumentParser((ModelArguments, TrainingArguments, DataArguments, LoraArguments))
     model_args, training_args, data_args, _ = parser.parse_dict(train_info_args, allow_extra_keys=True)
 
@@ -29,6 +30,7 @@ if __name__ == '__main__':
         tokenizer_class_name=ChatGLMTokenizer, config_class_name=ChatGLMConfig)
 
     # 官方28层
+    config.precision = None
     config.num_layers = 28
     model = MyTransformer(config=config, model_args=model_args, training_args=training_args)
 
