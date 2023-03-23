@@ -35,7 +35,7 @@ train_info_args = {
     'train_file': ['./data/LLM_top2w_tag_v3.json'],
     'max_epochs': 20,
     'max_steps': -1,
-    'optimizer': 'lion', # one of adamw,adam,lamb,lion
+    'optimizer': 'lion',  # one of adamw,adam,lamb,lion
     'train_batch_size': 1,
     'eval_batch_size': 1,
     'test_batch_size': 1,
@@ -53,7 +53,7 @@ train_info_args = {
 
     ##############  lora模块
     'with_lora': False,  # 是否启用lora模块
-    'inference_mode': False, # 推理模型, 不需要手动设置
+    'inference_mode': False,  # 推理模型, 不需要手动设置
     'r': 8,
     'target_modules': ['query_key_value'],
     'target_dtype': '16',
@@ -98,10 +98,8 @@ def postprocess(text):
 class NN_DataHelper(DataHelper):
     index = 1
 
-
     def on_data_ready(self):
         self.index = -1
-
 
     # 切分词
     def on_data_process(self, data: typing.Any, mode: str):
@@ -123,7 +121,7 @@ class NN_DataHelper(DataHelper):
                     continue
                 input_ids_all += input_ids
 
-            input_ids_all += [tokenizer.eos_token_id]* 2
+            input_ids_all += [tokenizer.eos_token_id]
         if not hasattr(self, 'sptoken'):
             self.sptoken = tokenizer.encode(text="")[-2:]
 
@@ -148,7 +146,6 @@ class NN_DataHelper(DataHelper):
                 'seqlen': seqlen
             }
             ds.append(d)
-
 
         if self.index < 3:
             print(ds[0])
@@ -188,14 +185,14 @@ class NN_DataHelper(DataHelper):
                 if i < 10:
                     print(paragraph)
                 qa = []
-                for sid,session in enumerate(paragraph):
+                for sid, session in enumerate(paragraph):
                     q = session['q']
                     answers_list = session['a']
                     q = preprocess(q)
                     answers = ''
                     for a in answers_list:
                         answers += preprocess(a + '\n')
-                    qa.append((sid,q,answers))
+                    qa.append((sid, q, answers))
                 qa_batch.append(qa)
                 if len(qa_batch) >= COUNT_PER_GROUP:
                     D.append(copy.deepcopy(qa_batch))
@@ -205,8 +202,8 @@ class NN_DataHelper(DataHelper):
             qa_batch.clear()
         return D
 
-    def collate_fn(self,batch):
-        if not hasattr(self,'sptoken'):
+    def collate_fn(self, batch):
+        if not hasattr(self, 'sptoken'):
             self.sptoken = self.tokenizer.encode(text="")[-2:]
 
         random_prompt = data_conf['random_prompt']
@@ -225,15 +222,15 @@ class NN_DataHelper(DataHelper):
         input_ids = o['input_ids']
 
         if random_prompt:
-            p = np.random.randint(0, torch.min(seqlens)-1, dtype=np.int64).tolist()
+            p = np.random.randint(0, torch.min(seqlens) - 1, dtype=np.int64).tolist()
         else:
             p = 0
-        da = torch.tensor(self.sptoken,dtype=input_ids.dtype)
-        da = da.unsqueeze(0).expand(input_ids.size(0),da.size(0))
+        da = torch.tensor(self.sptoken, dtype=input_ids.dtype)
+        da = da.unsqueeze(0).expand(input_ids.size(0), da.size(0))
 
-        input_ids = torch.cat([input_ids[:,:p],da,input_ids[:,p:]],dim=1)
+        input_ids = torch.cat([input_ids[:, :p], da, input_ids[:, p:]], dim=1)
         labels = torch.clone(input_ids)
-        labels[:,:p+1]= -100
+        labels[:, :p + 1] = -100
         max_len = torch.max(seqlens) + len(self.sptoken)
         o['input_ids'] = input_ids[:, :max_len].long()
         o['labels'] = labels[:, :max_len].long()
@@ -245,11 +242,8 @@ if __name__ == '__main__':
     model_args, training_args, data_args, lora_args = parser.parse_dict(train_info_args)
 
     dataHelper = NN_DataHelper(model_args, training_args, data_args)
-    tokenizer, config, _,_ = dataHelper.load_tokenizer_and_config(tokenizer_class_name=ChatGLMTokenizer,
-                                                                                 config_class_name=ChatGLMConfig)
-
-
-
+    tokenizer, config, _, _ = dataHelper.load_tokenizer_and_config(tokenizer_class_name=ChatGLMTokenizer,
+                                                                   config_class_name=ChatGLMConfig)
 
     # 缓存数据集
     # 检测是否存在 output/dataset_0-train.record ，不存在则制作数据集
