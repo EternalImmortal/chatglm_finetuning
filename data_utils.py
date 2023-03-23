@@ -35,9 +35,9 @@ train_info_args = {
     'max_epochs': 20,
     'max_steps': -1,
     'optimizer': 'lion', # one of adamw,adam,lamb,lion
-    'train_batch_size': 4,
-    'eval_batch_size': 2,
-    'test_batch_size': 2,
+    'train_batch_size': 1,
+    'eval_batch_size': 1,
+    'test_batch_size': 1,
     'learning_rate': 2e-5,  #
     'adam_epsilon': 1e-8,
     'gradient_accumulation_steps': 1,
